@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Infrastructure", "Neo.I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Tests", "Neo.Tests\Neo.Tests.csproj", "{4404E6AE-0E6B-47EC-99AC-F9E952080C23}"
 EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Neo.Database", "Neo.Database\Neo.Database.sqlproj", "{7003E183-5D5C-4A07-A363-BB1954478D00}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,12 @@ Global
 		{4404E6AE-0E6B-47EC-99AC-F9E952080C23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4404E6AE-0E6B-47EC-99AC-F9E952080C23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4404E6AE-0E6B-47EC-99AC-F9E952080C23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
