@@ -22,9 +22,10 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Build .NET Projects
-      run: dotnet build --no-restore
+    - name: Build all .csproj projects (skip .sqlproj)
+      run: |
+        for /R %%f in (*.csproj) do dotnet build "%%f" --no-restore
 
-    - name: Build SQL Project
+    - name: Build SQL Project (.sqlproj) with MSBuild
       run: |
         "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe" Neo/Neo.Database/Neo.Database.sqlproj /p:Configuration=Release
