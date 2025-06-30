@@ -1,0 +1,6 @@
+@Neo.Api_HostAddress = http://localhost:5082
+
+GET {{Neo.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
