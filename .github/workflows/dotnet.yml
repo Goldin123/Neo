@@ -1,4 +1,4 @@
-name: .NET + SQL Database Project Build
+name: .NET Project Build & Test (No SQL)
 
 on:
   push:
@@ -21,8 +21,12 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Restore dependencies for all .csproj files
+      run: |
+        Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+          dotnet restore $_.FullName
+        }
+      shell: pwsh
 
     - name: Build all .csproj projects (skip .sqlproj)
       run: |
@@ -31,6 +35,5 @@ jobs:
         }
       shell: pwsh
 
-    - name: Build SQL Project (.sqlproj) with MSBuild
-      run: |
-        "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\MSBuild.exe" Neo/Neo.Database/Neo.Database.sqlproj /p:Configuration=Release
+    - name: Run unit tests
+      run: dotnet test Neo/Neo.Tests/Neo.Tests.csproj --no-build --verbosity normal
