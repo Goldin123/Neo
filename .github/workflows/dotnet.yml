@@ -1,11 +1,3 @@
-name: .NET + SQL Database Project Build
-
-on:
-  push:
-    branches: [ "development" ]
-  pull_request:
-    branches: [ "development" ]
-
 jobs:
   build:
 
@@ -24,7 +16,10 @@ jobs:
 
     - name: Build all .csproj projects (skip .sqlproj)
       run: |
-        for /R %%f in (*.csproj) do dotnet build "%%f" --no-restore
+        Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+          dotnet build $_.FullName --no-restore
+        }
+      shell: pwsh
 
     - name: Build SQL Project (.sqlproj) with MSBuild
       run: |
