@@ -20,4 +20,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Functional\" />
+    <Folder Include="Integration\" />
+  </ItemGroup>
+
 </Project>
