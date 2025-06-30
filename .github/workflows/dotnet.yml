@@ -35,5 +35,13 @@ jobs:
         }
       shell: pwsh
 
+    - name: List Neo.Tests directory for debugging
+      run: dir Neo/Neo.Tests
+      shell: pwsh
+
     - name: Run unit tests
-      run: dotnet test Neo/Neo.Tests/Neo.Tests.csproj --no-build --verbosity normal
+      run: |
+        $projPath = Resolve-Path Neo/Neo.Tests/Neo.Tests.csproj
+        Write-Host "Test project found at $projPath"
+        dotnet test $projPath --no-build --verbosity normal
+      shell: pwsh
