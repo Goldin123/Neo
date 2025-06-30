@@ -1,4 +1,4 @@
-namespace Neo.Funtional.Tests
+namespace Neo.Tests
 {
     public class UnitTest1
     {
