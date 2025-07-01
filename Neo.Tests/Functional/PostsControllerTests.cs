@@ -5,14 +5,14 @@ using Moq;
 using Neo.Api.Controllers;
 using Neo.Application.Common;
 using Neo.Application.UseCases.CreatePost;
+using Neo.Application.UseCases.FlagPost;
 using Neo.Application.UseCases.GetPagedPosts;
 using Neo.Application.UseCases.LikePost;
+using Neo.Application.UseCases.TagPost;
+using Neo.Application.UseCases.UnlikePost;
 using Neo.Domain.Entities;
 using System.Security.Claims;
 using Xunit;
-
-using Neo.Application.UseCases.FlagPost;
-using Neo.Application.UseCases.TagPost;
 
 namespace Neo.Tests.Functional;
 
@@ -291,4 +291,98 @@ public class PostsControllerTests
         Assert.Contains("Sucessfully flagged", ok.Value!.ToString());
         Assert.Contains("false_information", ok.Value!.ToString());
     }
+
+    [Fact]
+    public async Task Unlike_Returns_Unauthorized_If_User_Not_Authenticated()
+    {
+        // Arrange
+        var mediatorMock = new Mock<IMediator>();
+        var controller = new PostsController(mediatorMock.Object);
+
+        controller.ControllerContext = new ControllerContext()
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+        };
+
+        // Act
+        var result = await controller.Unlike(25);
+
+        // Assert
+        Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task Unlike_Returns_BadRequest_If_User_Has_Not_Liked_Post()
+    {
+        // Arrange
+        var mediatorMock = new Mock<IMediator>();
+        mediatorMock.Setup(m => m.Send(It.IsAny<UnlikePostCommand>(), default)).ReturnsAsync(-1);
+
+        var controller = new PostsController(mediatorMock.Object);
+
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+        new Claim(ClaimTypes.NameIdentifier, "17")
+    }, "mock"));
+
+        controller.ControllerContext = new ControllerContext()
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await controller.Unlike(25);
+
+        // Assert
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("You have not liked this post or already unliked it.", bad.Value);
+    }
+
+    [Fact]
+    public async Task Unlike_Returns_Ok_If_Successful()
+    {
+        // Arrange
+        var mediatorMock = new Mock<IMediator>();
+        mediatorMock.Setup(m => m.Send(It.IsAny<UnlikePostCommand>(), default)).ReturnsAsync(1);
+
+        var controller = new PostsController(mediatorMock.Object);
+
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+        new Claim(ClaimTypes.NameIdentifier, "15")
+    }, "mock"));
+
+        controller.ControllerContext = new ControllerContext()
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await controller.Unlike(25);
+
+        // Assert
+        Assert.IsType<OkResult>(result);
+    }
+
+    [Fact]
+    public async Task Unlike_Returns_Unauthorized_If_UserId_Is_Zero()
+    {
+        // Arrange
+        var mediatorMock = new Mock<IMediator>();
+        var controller = new PostsController(mediatorMock.Object);
+
+        // UserId claim is missing (should parse to 0)
+        controller.ControllerContext = new ControllerContext()
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity()) }
+        };
+
+        // Act
+        var result = await controller.Unlike(44);
+
+        // Assert
+        Assert.IsType<UnauthorizedResult>(result);
+    }
+
+
 }

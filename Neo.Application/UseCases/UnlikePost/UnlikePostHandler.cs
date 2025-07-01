@@ -10,9 +10,9 @@ using Neo.Domain.Interfaces;
 public sealed class UnlikePostHandler(
     IPostLikeRepository likeRepo,
     ILogger<UnlikePostHandler> logger
-) : IRequestHandler<UnlikePostCommand, bool>
+) : IRequestHandler<UnlikePostCommand, int>
 {
-    public async Task<bool> Handle(UnlikePostCommand request, CancellationToken cancellationToken)
+    public async Task<int> Handle(UnlikePostCommand request, CancellationToken cancellationToken)
     {
         logger.LogInformation("User {UserId} is removing like from post {PostId} at {Timestamp:O}", request.UserId, request.PostId, DateTime.UtcNow);
         var success = await likeRepo.RemoveLikeAsync(request.PostId, request.UserId);
