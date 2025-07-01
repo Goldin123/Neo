@@ -91,4 +91,61 @@ public class AuthControllerTests
         Assert.Equal(101, idValue);
     }
 
+    #region Login
+
+    [Fact]
+    public async Task Login_Returns_Ok_With_Token_If_Credentials_Valid()
+    {
+        var user = new User { Id = 1, Username = "user", PasswordHash = "hashed", Role = UserRole.Moderator };
+        var dto = new AuthController.LoginDto("user", "password");
+
+        _userRepo.Setup(r => r.GetByUsernameAsync("user")).ReturnsAsync(user);
+        _passwordHasher.Setup(h => h.VerifyPassword("password", "hashed")).Returns(true);
+        _jwtTokenService.Setup(t => t.GenerateToken(user)).Returns("jwt-token");
+
+        var result = await _controller.Login(dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+
+        var tokenProp = ok.Value!.GetType().GetProperty("token");
+        var usernameProp = ok.Value!.GetType().GetProperty("username");
+        var roleProp = ok.Value!.GetType().GetProperty("role");
+        var userIdProp = ok.Value!.GetType().GetProperty("userId");
+
+        Assert.Equal("jwt-token", tokenProp?.GetValue(ok.Value));
+        Assert.Equal("user", usernameProp?.GetValue(ok.Value));
+        Assert.Equal(UserRole.Moderator, Enum.Parse<UserRole>(roleProp?.GetValue(ok.Value)?.ToString() ?? ""));
+        Assert.Equal(1, userIdProp?.GetValue(ok.Value));
+    }
+
+    [Fact]
+    public async Task Login_Returns_Unauthorized_If_User_Not_Found()
+    {
+        var dto = new AuthController.LoginDto("missing", "pw");
+
+        _userRepo.Setup(r => r.GetByUsernameAsync("missing")).ReturnsAsync((User?)null);
+
+        var result = await _controller.Login(dto);
+
+        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal("Invalid credentials.", unauthorized.Value);
+    }
+
+    [Fact]
+    public async Task Login_Returns_Unauthorized_If_Password_Invalid()
+    {
+        var user = new User { Id = 1, Username = "user", PasswordHash = "hash", Role = UserRole.Moderator };
+        var dto = new AuthController.LoginDto("user", "wrong");
+
+        _userRepo.Setup(r => r.GetByUsernameAsync("user")).ReturnsAsync(user);
+        _passwordHasher.Setup(h => h.VerifyPassword("wrong", "hash")).Returns(false);
+
+        var result = await _controller.Login(dto);
+
+        var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+        Assert.Equal("Invalid credentials.", unauthorized.Value);
+    }
+
+    #endregion
+
 }

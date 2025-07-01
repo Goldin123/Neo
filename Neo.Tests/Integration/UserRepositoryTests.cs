@@ -93,4 +93,46 @@ public class UserRepositoryTests : IClassFixture<DbFixture>
         // Assert
         Assert.False(exists);
     }
+
+    #region Login
+
+    [Fact]
+    public async Task GetByUsernameAsync_Should_Return_User_With_Correct_PasswordHash()
+    {
+        // Arrange
+        var username = $"login_{Guid.NewGuid():N}";
+        var expectedHash = "test_password_hash";
+        var user = new User
+        {
+            Username = username,
+            PasswordHash = expectedHash,
+            Role = UserRole.Moderator
+        };
+
+        await _repository.CreateAsync(user);
+
+        // Act
+        var result = await _repository.GetByUsernameAsync(username);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(username, result!.Username);
+        Assert.Equal(expectedHash, result.PasswordHash);
+        Assert.Equal(UserRole.Moderator, result.Role);
+    }
+
+    [Fact]
+    public async Task GetByUsernameAsync_Should_Return_Null_If_User_Does_Not_Exist()
+    {
+        // Arrange
+        var username = $"unknown_{Guid.NewGuid():N}";
+
+        // Act
+        var result = await _repository.GetByUsernameAsync(username);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    #endregion
 }
