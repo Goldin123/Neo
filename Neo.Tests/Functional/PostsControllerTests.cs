@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Neo.Api.Controllers;
 using Neo.Application.Common;
+using Neo.Application.DTOs;
 using Neo.Application.UseCases.CreatePost;
 using Neo.Application.UseCases.FlagPost;
 using Neo.Application.UseCases.GetPagedPosts;
@@ -95,17 +96,39 @@ public class PostsControllerTests
     public async Task GetPaged_ReturnsOk_WithPagedResult()
     {
         // Arrange
-        var posts = new List<Post>
+        var pagedPosts = new List<PagedPostDto>
+    {
+        new PagedPostDto
+        {
+            PostId = 1,
+            PostTitle = "First",
+            PostContent = "Hello",
+            PostCreated = DateTime.UtcNow,
+            CreatedUser = new PostUserDto { Id = 1, UserName = "User1" },
+            Tags = new List<PostTagDto> { new PostTagDto { TagName = "TestTag" } },
+            Comments = new List<PostCommentDto>
             {
-                new Post { Id = 1, UserId = 1, Title = "First", Content = "Hello", CreatedAt = DateTime.UtcNow }
-            };
+                new PostCommentDto { CommentUserName = "Commenter", CommentContent = "Hi!", DateCreated = DateTime.UtcNow }
+            },
+            Likes = new List<PostLikeDto>
+            {
+                new PostLikeDto { LikedUserName = "Liker", LikedDate = DateTime.UtcNow }
+            },
+            Summary = new PostSummaryDto
+            {
+                TotalTags = 1,
+                TotalComments = 1,
+                TotalLikes = 1
+            }
+        }
+    };
 
-        var pagedResult = new PagedResult<Post>
+        var pagedResult = new PagedResultDto<PagedPostDto>
         {
             Page = 1,
             PageSize = 10,
             TotalCount = 1,
-            Items = posts
+            Items = pagedPosts
         };
 
         _mediator.Setup(m => m.Send(
@@ -118,23 +141,27 @@ public class PostsControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var actual = Assert.IsType<PagedResult<Post>>(okResult.Value);
+        var actual = Assert.IsType<PagedResultDto<PagedPostDto>>(okResult.Value);
 
         Assert.Single(actual.Items);
-        Assert.Equal("First", actual.Items.First().Title);
-
+        Assert.Equal("First", actual.Items.First().PostTitle);
+        Assert.Equal("User1", actual.Items.First().CreatedUser.UserName);
+        Assert.Single(actual.Items.First().Tags);
+        Assert.Single(actual.Items.First().Comments);
+        Assert.Single(actual.Items.First().Likes);
+        Assert.Equal(1, actual.Items.First().Summary.TotalLikes);
     }
 
     [Fact]
     public async Task GetPaged_ReturnsOk_WithEmptyList()
     {
         // Arrange
-        var pagedResult = new PagedResult<Post>
+        var pagedResult = new PagedResultDto<PagedPostDto>
         {
             Page = 1,
             PageSize = 10,
             TotalCount = 0,
-            Items = new List<Post>()
+            Items = new List<PagedPostDto>()
         };
 
         _mediator.Setup(m => m.Send(It.IsAny<GetPagedPostsQuery>(), It.IsAny<CancellationToken>()))
@@ -145,10 +172,11 @@ public class PostsControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var actual = Assert.IsType<PagedResult<Post>>(okResult.Value);
+        var actual = Assert.IsType<PagedResultDto<PagedPostDto>>(okResult.Value);
 
         Assert.Empty(actual.Items);
     }
+
 
     [Fact]
     public async Task Like_Returns_Ok_With_LikeId_When_Successful()

@@ -30,4 +30,11 @@ public interface IPostLikeRepository
     /// <param name="userId">The unique identifier of the user.</param>
     /// <returns><c>true</c> if the like was removed; otherwise, <c>false</c>.</returns>
     Task<int> RemoveLikeAsync(int postId, int userId);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="postId"></param>
+    /// <returns></returns>
+    /// <returns>An enumerable of <see cref="PostLike"/> matching the criteria.</returns>
+    Task<IEnumerable<PostLike>> GetLikesByPostIdAsync(int postId);
 }

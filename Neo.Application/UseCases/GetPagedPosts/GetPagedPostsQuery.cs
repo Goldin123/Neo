@@ -2,6 +2,7 @@
 
 using MediatR;
 using Neo.Application.Common;
+using Neo.Application.DTOs;
 using Neo.Domain.Entities;
 
 /// <summary>
@@ -16,4 +17,4 @@ public record GetPagedPostsQuery(
     string? Tag = null,
     string? SortBy = null,
     bool Desc = false
-) : IRequest<PagedResult<Post>>;
+) : IRequest<PagedResultDto<PagedPostDto>>;
