@@ -25,22 +25,23 @@ public class AuthController(
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
-        // Optionally validate role format here, if it's an enum:
-        // (otherwise let validation handle it in the Application layer)
-        if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password) || string.IsNullOrWhiteSpace(dto.Role))
+        if (string.IsNullOrWhiteSpace(dto.Username) ||
+            string.IsNullOrWhiteSpace(dto.Password) ||
+            string.IsNullOrWhiteSpace(dto.Role))
             return BadRequest("Username, password, and role are required.");
 
         // Convert string to UserRole enum (case-insensitive)
-        if (!Enum.TryParse<Neo.Domain.Enums.UserRole>(dto.Role, true, out var userRole))
+        if (!Enum.TryParse<Neo.Domain.Enums.UserRole>(dto.Role, true, out var userRole) ||
+            !Enum.IsDefined(typeof(Neo.Domain.Enums.UserRole), userRole) ||
+            userRole == Neo.Domain.Enums.UserRole.None) // If you have a None/Unknown default
             return BadRequest("Invalid role.");
-        // If you want, you can add a validator for RegisterUserCommand to ensure valid role.
 
-        // Send command to application layer via MediatR
         var result = await mediator.Send(new RegisterUserCommand(dto.Username, dto.Password, userRole));
         if (!result.Success)
             return Conflict(new { error = result.ErrorMessage });
         return Ok(new { id = result.UserId });
     }
+
 
     /// <summary>
     /// Logs a user in and returns a JWT token.
