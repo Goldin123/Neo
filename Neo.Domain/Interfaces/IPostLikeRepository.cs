@@ -29,5 +29,5 @@ public interface IPostLikeRepository
     /// <param name="postId">The unique identifier of the post.</param>
     /// <param name="userId">The unique identifier of the user.</param>
     /// <returns><c>true</c> if the like was removed; otherwise, <c>false</c>.</returns>
-    Task<bool> RemoveLikeAsync(int postId, int userId);
+    Task<int> RemoveLikeAsync(int postId, int userId);
 }

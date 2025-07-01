@@ -86,9 +86,10 @@ public class PostsController(IMediator mediator) : ControllerBase
         if (userId == 0) return Unauthorized();
 
         var result = await mediator.Send(new UnlikePostCommand(id, userId));
-        // The command/handler should return true/false (or an int for deleted likeId, etc.)
-        if (!result)
+        
+        if (result == -1)
             return BadRequest("You have not liked this post or already unliked it.");
+
         return Ok();
     }
 

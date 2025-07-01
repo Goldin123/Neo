@@ -56,15 +56,15 @@ public sealed class PostLikeRepository(DbContext dbContext, ILogger<PostLikeRepo
     }
 
     /// <inheritdoc />
-    public async Task<bool> RemoveLikeAsync(int postId, int userId)
+    public async Task<int> RemoveLikeAsync(int postId, int userId)
     {
         var now = DateTime.UtcNow;
         try
         {
             using var conn = dbContext.CreateConnection();
-            await conn.ExecuteAsync("spPostLike_Remove", new { PostId = postId, UserId = userId }, commandType: CommandType.StoredProcedure);
+            var likeId = await conn.ExecuteAsync("spPostLike_Remove", new { PostId = postId, UserId = userId }, commandType: CommandType.StoredProcedure);
             logger.LogInformation("Like removed for post {PostId} by user {UserId} at {Timestamp:O}", postId, userId, now);
-            return true;
+            return likeId;
         }
         catch (Exception ex)
         {

@@ -75,4 +75,45 @@ public class PostLikeRepositoryTests : IClassFixture<DbFixture>
         Assert.True(firstLike > 0);
         Assert.Equal(-1, secondLike);
     }
+
+    [Fact]
+    public async Task RemoveLikeAsync_Should_Remove_Like_And_Return_One()
+    {
+        // Arrange: create users and post
+        var user1 = new User { Username = $"userrl1_{Guid.NewGuid():N}", PasswordHash = "pw1", Role = UserRole.User };
+        var user2 = new User { Username = $"userrl2_{Guid.NewGuid():N}", PasswordHash = "pw2", Role = UserRole.User };
+        var user1Id = await _userRepo.CreateAsync(user1);
+        var user2Id = await _userRepo.CreateAsync(user2);
+        var post = new Post { UserId = user1Id, Title = $"ToUnlike {Guid.NewGuid()}", Content = "Please unlike me", CreatedAt = DateTime.UtcNow };
+        var postId = await _postRepo.CreateAsync(post);
+
+        // user2 likes post
+        var likeId = await _likeRepo.AddLikeAsync(postId, user2Id);
+        Assert.True(likeId > 0);
+
+        // Act: user2 unlikes post
+        var result = await _likeRepo.RemoveLikeAsync(postId, user2Id);
+
+        // Assert
+        Assert.Equal(-1, result);
+    }
+
+    [Fact]
+    public async Task RemoveLikeAsync_Should_Return_Minus1_If_Not_Liked()
+    {
+        // Arrange: create users and post
+        var user1 = new User { Username = $"userrl3_{Guid.NewGuid():N}", PasswordHash = "pw1", Role = UserRole.User };
+        var user2 = new User { Username = $"userrl4_{Guid.NewGuid():N}", PasswordHash = "pw2", Role = UserRole.User };
+        var user1Id = await _userRepo.CreateAsync(user1);
+        var user2Id = await _userRepo.CreateAsync(user2);
+        var post = new Post { UserId = user1Id, Title = $"NoLike {Guid.NewGuid()}", Content = "Nobody liked me", CreatedAt = DateTime.UtcNow };
+        var postId = await _postRepo.CreateAsync(post);
+
+        // Act: user2 tries to unlike without ever liking
+        var result = await _likeRepo.RemoveLikeAsync(postId, user2Id);
+
+        // Assert
+        Assert.Equal(-1, result);
+    }
+
 }
