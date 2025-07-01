@@ -1,4 +1,6 @@
-﻿namespace Neo.Domain.Entities;
+﻿using System.Collections.Generic;
+
+namespace Neo.Domain.Entities;
 
 /// <summary>
 /// Represents a forum post.
@@ -39,4 +41,10 @@ public class Post
     /// Gets or sets the reason for flagging the post, if any.
     /// </summary>
     public string? FlagReason { get; set; }
+
+    /// <summary>
+    /// Gets or sets the tags associated with the post.
+    /// </summary>
+    public string TagName { get; set; } 
+
 }
