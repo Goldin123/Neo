@@ -72,4 +72,27 @@ public sealed class PostLikeRepository(DbContext dbContext, ILogger<PostLikeRepo
             throw;
         }
     }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<PostLike>> GetLikesByPostIdAsync(int postId)
+    {
+        var now = DateTime.UtcNow;
+        try
+        {
+            using var conn = dbContext.CreateConnection();
+            var likes = await conn.QueryAsync<PostLike>(
+                "spPostLike_GetByPostId", // Make sure this SP exists and returns UserId, UserName, CreatedAt
+                new { PostId = postId },
+                commandType: CommandType.StoredProcedure
+            );
+            logger.LogInformation("Fetched {Count} likes for post {PostId} at {Timestamp:O}", likes.Count(), postId, now);
+            return likes;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error fetching likes for post {PostId} at {Timestamp:O}", postId, now);
+            throw;
+        }
+    }
+
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
-using Neo.Application.Common;
+using Neo.Application.DTOs; // Use correct namespace if different
 using Neo.Application.UseCases.GetPagedPosts;
 using Neo.Domain.Entities;
 using Neo.Domain.Interfaces;
@@ -25,13 +25,59 @@ namespace Neo.Tests.Unit
                 new Post { Id = 2, UserId = 2, Title = "Post 2", Content = "B", CreatedAt = DateTime.UtcNow }
             };
 
-            var repoMock = new Mock<IPostRepository>();
-            repoMock.Setup(r => r.GetPagedAsync(1, 10, null, null, null, null, null, false))
-                .ReturnsAsync(posts);
-
+            var postRepoMock = new Mock<IPostRepository>();
+            var commentRepoMock = new Mock<ICommentRepository>();
+            var likeRepoMock = new Mock<IPostLikeRepository>();
+            var tagRepoMock = new Mock<ITagRepository>();
+            var userRepoMock = new Mock<IUserRepository>();
             var loggerMock = new Mock<ILogger<GetPagedPostsHandler>>();
 
-            var handler = new GetPagedPostsHandler(repoMock.Object, loggerMock.Object);
+            postRepoMock.Setup(r => r.GetPagedAsync(1, 10, null, null, null, null, null, false))
+                .ReturnsAsync(posts);
+
+            // Comments: Only UserId provided
+            commentRepoMock.Setup(r => r.GetByPostIdAsync(It.IsAny<int>()))
+                .ReturnsAsync((int postId) =>
+                {
+                    return new List<Comment>
+                    {
+                        new Comment { Id = 1, PostId = postId, UserId = 10, Content = $"Nice post {postId}", CreatedAt = DateTime.UtcNow }
+                    };
+                });
+
+            // Likes: Only UserId provided
+            likeRepoMock.Setup(r => r.GetLikesByPostIdAsync(It.IsAny<int>()))
+                .ReturnsAsync((int postId) =>
+                {
+                    return new List<PostLike>
+                    {
+                        new PostLike { Id = 1, PostId = postId, UserId = 11, CreatedAt = DateTime.UtcNow }
+                    };
+                });
+
+            // Tags
+            tagRepoMock.Setup(r => r.GetTagsByPostIdAsync(It.IsAny<int>()))
+                .ReturnsAsync(new List<Tag>
+                {
+                    new Tag { Id = 1, Name = "TestTag" }
+                });
+
+            // Users: Maps UserId -> UserName ("User" + Id)
+            userRepoMock.Setup(r => r.GetByIdAsync(It.IsAny<int>()))
+                .ReturnsAsync((int userId) =>
+                {
+                    return new User { Id = userId, Username = $"User{userId}" };
+                });
+
+            var handler = new GetPagedPostsHandler(
+                postRepoMock.Object,
+                commentRepoMock.Object,
+                likeRepoMock.Object,
+                tagRepoMock.Object,
+                userRepoMock.Object,
+                loggerMock.Object
+            );
+
             var query = new GetPagedPostsQuery(1, 10);
 
             // Act
@@ -41,20 +87,59 @@ namespace Neo.Tests.Unit
             Assert.NotNull(result);
             Assert.Equal(1, result.Page);
             Assert.Equal(10, result.PageSize);
-            Assert.Equal(posts.Count, result.TotalCount); // Since you use posts.Count() for TotalCount
-            Assert.Equal(posts, result.Items);
+            Assert.Equal(posts.Count, result.TotalCount);
+            Assert.Equal(posts.Count, result.Items.Count);
+
+            var postDto = result.Items.First();
+            Assert.Equal(posts[0].Id, postDto.PostId);
+            Assert.Equal(posts[0].Title, postDto.PostTitle);
+            Assert.Equal(posts[0].Content, postDto.PostContent);
+
+            // CreatedUser mapping via UserRepo
+            Assert.NotNull(postDto.CreatedUser);
+            Assert.Equal($"User{posts[0].UserId}", postDto.CreatedUser.UserName);
+
+            // Tags
+            Assert.Single(postDto.Tags);
+            Assert.Equal("TestTag", postDto.Tags[0].TagName);
+
+            // Comments: UserId mapped to UserName
+            Assert.Single(postDto.Comments);
+            Assert.Equal("User10", postDto.Comments[0].CommentUserName);
+
+            // Likes: UserId mapped to UserName
+            Assert.Single(postDto.Likes);
+            Assert.Equal("User11", postDto.Likes[0].LikedUserName);
+
+            // Summary
+            Assert.Equal(1, postDto.Summary.TotalTags);
+            Assert.Equal(1, postDto.Summary.TotalComments);
+            Assert.Equal(1, postDto.Summary.TotalLikes);
         }
 
         [Fact]
         public async Task Handle_ReturnsEmpty_WhenNoPostsFound()
         {
             // Arrange
-            var repoMock = new Mock<IPostRepository>();
-            repoMock.Setup(r => r.GetPagedAsync(1, 10, null, null, null, null, null, false))
+            var postRepoMock = new Mock<IPostRepository>();
+            var commentRepoMock = new Mock<ICommentRepository>();
+            var likeRepoMock = new Mock<IPostLikeRepository>();
+            var tagRepoMock = new Mock<ITagRepository>();
+            var userRepoMock = new Mock<IUserRepository>();
+            var loggerMock = new Mock<ILogger<GetPagedPostsHandler>>();
+
+            postRepoMock.Setup(r => r.GetPagedAsync(1, 10, null, null, null, null, null, false))
                 .ReturnsAsync(new List<Post>());
 
-            var loggerMock = new Mock<ILogger<GetPagedPostsHandler>>();
-            var handler = new GetPagedPostsHandler(repoMock.Object, loggerMock.Object);
+            var handler = new GetPagedPostsHandler(
+                postRepoMock.Object,
+                commentRepoMock.Object,
+                likeRepoMock.Object,
+                tagRepoMock.Object,
+                userRepoMock.Object,
+                loggerMock.Object
+            );
+
             var query = new GetPagedPostsQuery(1, 10);
 
             // Act
