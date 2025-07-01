@@ -8,6 +8,7 @@ using Neo.Infrastructure.Data;
 using Neo.Infrastructure.Repositories;
 using System.Text;
 using Neo.Domain.Interfaces;
+using System.Reflection;
 
 namespace Neo.Api
 {
@@ -22,7 +23,44 @@ namespace Neo.Api
 
             // Swagger/OpenAPI
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "Neo.Api",
+                    Version = "v1"
+                });
+
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                options.IncludeXmlComments(xmlPath, true);
+
+                options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "Enter: Bearer {your JWT token}"
+                });
+
+                options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                    {
+                        {
+                            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                            {
+                            Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                            {
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                             }
+                            },
+                            Array.Empty<string>()
+                        }
+                    });
+                });
+
 
             // ---------- Application & CQRS ----------
             // MediatR: scan Neo.Application for handlers
