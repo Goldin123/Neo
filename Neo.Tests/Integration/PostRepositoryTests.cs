@@ -49,5 +49,57 @@ public class PostRepositoryTests : IClassFixture<DbFixture>
         Assert.Equal(post.UserId, fetched.UserId);
     }
 
-    // Other tests ...
+    [Fact]
+    public async Task GetByIdAsync_Should_Return_Null_If_Post_Does_Not_Exist()
+    {
+        var fetched = await _repository.GetByIdAsync(-12345);
+        Assert.Null(fetched);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_Should_Return_Inserted_Posts()
+    {
+        // Arrange: create a user and two posts
+        var userRepo = new UserRepository(_fixture.DbContext, NullLogger<UserRepository>.Instance);
+        var user = new Neo.Domain.Entities.User
+        {
+            Username = $"pageduser_{Guid.NewGuid():N}",
+            PasswordHash = "pw",
+            Role = Neo.Domain.Enums.UserRole.User
+        };
+        var userId = await userRepo.CreateAsync(user);
+
+        var postsToInsert = new List<Post>
+        {
+            new Post { UserId = userId, Title = $"Paged Post A {Guid.NewGuid()}", Content = "Content A", CreatedAt = DateTime.UtcNow },
+            new Post { UserId = userId, Title = $"Paged Post B {Guid.NewGuid()}", Content = "Content B", CreatedAt = DateTime.UtcNow }
+        };
+
+        foreach (var p in postsToInsert)
+            await _repository.CreateAsync(p);
+
+        // Act
+        var pagedPosts = await _repository.GetPagedAsync(page: 1, pageSize: 10, authorId: userId);
+
+        // Assert
+        Assert.NotNull(pagedPosts);
+        var titles = pagedPosts.Select(p => p.Title).ToList();
+        Assert.Contains(postsToInsert[0].Title, titles);
+        Assert.Contains(postsToInsert[1].Title, titles);
+    }
+
+    // Optional: Add Tag and Flag Post if you implement/test these methods
+    /*
+    [Fact]
+    public async Task AddTagAsync_Should_Add_Tag_To_Post()
+    {
+        // Similar pattern: create user, create post, add tag, assert true/verify with SQL query if you want
+    }
+
+    [Fact]
+    public async Task FlagPostAsync_Should_Flag_Post()
+    {
+        // Similar: create user/moderator, create post, flag post, verify if no exception is thrown or check DB for flag status
+    }
+    */
 }
