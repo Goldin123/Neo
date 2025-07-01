@@ -7,10 +7,21 @@ using Microsoft.Extensions.Configuration;
 /// <summary>
 /// Provides SQL Server connection management for the infrastructure layer.
 /// </summary>
-public sealed class DbContext(IConfiguration config)
+public sealed class DbContext
 {
-    private readonly string _connectionString = config.GetConnectionString("DefaultConnection")
-        ?? throw new InvalidOperationException("Missing DefaultConnection");
+    private readonly string _connectionString;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DbContext"/> class.
+    /// </summary>
+    /// <param name="config">The configuration from which to read the connection string.</param>
+    /// <param name="connectionName">The name of the connection string to use (default is 'DefaultConnection').</param>
+    /// <exception cref="InvalidOperationException">Thrown if the specified connection string is missing.</exception>
+    public DbContext(IConfiguration config, string connectionName = "DefaultConnection")
+    {
+        _connectionString = config.GetConnectionString(connectionName)
+            ?? throw new InvalidOperationException($"Missing connection string '{connectionName}'");
+    }
 
     /// <summary>
     /// Creates and returns a new SQL database connection.
