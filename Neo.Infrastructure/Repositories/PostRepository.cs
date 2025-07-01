@@ -37,7 +37,7 @@ public sealed class PostRepository(DbContext dbContext, ILogger<PostRepository> 
         try
         {
             using var conn = dbContext.CreateConnection();
-            return await conn.QueryAsync<Post>(
+            var rst = await conn.QueryAsync<Post>(
                 "spPost_GetPaged",
                 new
                 {
@@ -52,6 +52,7 @@ public sealed class PostRepository(DbContext dbContext, ILogger<PostRepository> 
                 },
                 commandType: CommandType.StoredProcedure
             );
+            return rst;
         }
         catch (Exception ex)
         {

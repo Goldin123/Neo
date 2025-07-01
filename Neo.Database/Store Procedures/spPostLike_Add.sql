@@ -6,7 +6,7 @@
         DECLARE @Id INT;
         EXEC spPostLike_Add 1, 2, @Id OUTPUT;
 */
-CREATE PROCEDURE spPostLike_Add
+Create PROCEDURE [dbo].[spPostLike_Add]
     @PostId INT,
     @UserId INT,
     @NewId INT OUTPUT
@@ -15,22 +15,29 @@ BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
         BEGIN TRAN
-            -- Prevent liking own post or duplicate like
-            IF EXISTS (
-                SELECT 1 FROM Posts WHERE Id = @PostId AND UserId = @UserId
-            ) OR EXISTS (
-                SELECT 1 FROM PostLikes WHERE PostId = @PostId AND UserId = @UserId
-            )
+
+            -- Case 1: User cannot like their own post
+            IF EXISTS (SELECT 1 FROM Posts WHERE Id = @PostId AND UserId = @UserId)
             BEGIN
-                SET @NewId = -1;
+                SET @NewId = -2;  -- -2: Cannot like own post
                 ROLLBACK TRAN;
                 RETURN;
             END
 
+            -- Case 2: Prevent duplicate like
+            IF EXISTS (SELECT 1 FROM PostLikes WHERE PostId = @PostId AND UserId = @UserId)
+            BEGIN
+                SET @NewId = -1;  -- -1: Already liked
+                ROLLBACK TRAN;
+                RETURN;
+            END
+
+            -- Insert like
             INSERT INTO PostLikes (PostId, UserId, CreatedAt)
             VALUES (@PostId, @UserId, GETUTCDATE());
 
             SET @NewId = SCOPE_IDENTITY();
+
         COMMIT TRAN
     END TRY
     BEGIN CATCH
@@ -38,3 +45,5 @@ BEGIN
         THROW;
     END CATCH
 END
+
+

@@ -6,8 +6,10 @@ using Neo.Application.UseCases.CreatePost;
 using Neo.Application.UseCases.FlagPost;
 using Neo.Application.UseCases.GetPagedPosts;
 using Neo.Application.UseCases.LikePost;
+using Neo.Application.UseCases.UnlikePost;
 using Neo.Domain.Entities;
 using System.Security.Claims;
+using Neo.Application.UseCases.TagPost;
 
 namespace Neo.Api.Controllers;
 
@@ -66,25 +68,75 @@ public class PostsController(IMediator mediator) : ControllerBase
 
         var likeId = await mediator.Send(new LikePostCommand(id, userId));
         if (likeId == -1)
-            return BadRequest("You cannot like your own post or like a post more than once.");
+            return BadRequest("You cannot like a post more than once.");
+
+        if (likeId == -2)
+            return BadRequest("You cannot like your own post.");
         return Ok(new { likeId });
     }
 
     /// <summary>
-    /// Flags a post as misleading or false information (moderators only).
+    /// Removes a like from a post by the current user.
     /// </summary>
-    [HttpPost("{id}/flag")]
-    [Authorize(Roles = "Moderator")]
-    public async Task<IActionResult> Flag(int id, [FromBody] FlagPostCommand cmd)
+    [HttpPost("{id}/unlike")]
+    [Authorize]
+    public async Task<IActionResult> Unlike(int id)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
         if (userId == 0) return Unauthorized();
 
-        var flagResult = await mediator.Send(cmd with { PostId = id, ModeratorId = userId });
-        if (!flagResult)
-            return BadRequest("Failed to flag post.");
+        var result = await mediator.Send(new UnlikePostCommand(id, userId));
+        // The command/handler should return true/false (or an int for deleted likeId, etc.)
+        if (!result)
+            return BadRequest("You have not liked this post or already unliked it.");
         return Ok();
     }
 
-    public record CreatePostDto(string Title,string Content);
+    /// <summary>
+    /// Flags a post as misleading or false information (moderators only).
+    /// Adds a regulatory tag to the post.
+    /// </summary>
+    [HttpPost("{PostId}/flag")]
+    [Authorize(Roles = "Moderator")]
+    public async Task<IActionResult> Flag(int PostId, [FromBody] FlagPostDto dto)
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+        if (userId == 0) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(dto.reason))
+            return BadRequest("Flag reason is required.");
+
+        // --- Map reason to tag name ---
+        var tagName = MapReasonToTag(dto.reason);
+        if (string.IsNullOrWhiteSpace(tagName))
+            return BadRequest("Invalid flag reason. No corresponding tag found.");
+
+        var cmd = new FlagPostCommand(PostId, tagName, userId);
+
+        var flagResult = await mediator.Send(cmd);
+        if (!flagResult)
+            return BadRequest("Failed to flag post.");     
+
+        // Only add a tag if the mapping found one
+        if (!string.IsNullOrWhiteSpace(tagName))
+            await mediator.Send(new TagPostCommand(PostId, tagName));
+
+        return Ok($"Sucessfully flagged the post and created a {tagName} tag on it.");
+    }
+
+    // Maps moderator reason to regulatory tag
+    private static string? MapReasonToTag(string reason)
+    {
+        reason = reason.ToLowerInvariant();
+
+        if (reason.Contains("mislead"))
+            return "misleading";
+        if (reason.Contains("false"))
+            return "false_information";
+        // Add more mappings as needed
+        return null;
+    }
+
+    public record CreatePostDto(string Title, string Content);
+    public record FlagPostDto(string reason);
 }
