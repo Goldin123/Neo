@@ -1,4 +1,4 @@
-name: .NET Project Build & Test (No SQL)
+name: .NET Project Build & Test (With SQL Server for Integration Tests)
 
 on:
   push:
@@ -10,8 +10,21 @@ on:
 
 jobs:
   build:
-
     runs-on: windows-latest
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          SA_PASSWORD: "YourStrong!Passw0rd"
+          ACCEPT_EULA: "Y"
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "exit 0"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - uses: actions/checkout@v4
@@ -39,9 +52,15 @@ jobs:
       run: dir Neo.Tests
       shell: pwsh
 
-    - name: Run unit tests
+    - name: Wait for SQL Server to be ready
+      run: Start-Sleep -Seconds 20
+      shell: pwsh
+
+    - name: Run tests (unit, functional, integration)
       run: |
         $projPath = Resolve-Path Neo.Tests/Neo.Tests.csproj
         Write-Host "Test project found at $projPath"
         dotnet test $projPath --no-build --verbosity normal
       shell: pwsh
+      env:
+        ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=NeoTestDb;User=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"
