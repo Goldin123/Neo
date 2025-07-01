@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Neo.Application.UseCases.RegisterUser;
 using Neo.Domain.Interfaces;
+using System.Security.Claims;
 
 namespace Neo.Api.Controllers;
 
@@ -56,6 +57,27 @@ public class AuthController(
 
         var token = jwtTokenService.GenerateToken(user);
         return Ok(new { token, username = user.Username, role = user.Role, userId = user.Id });
+    }
+
+    /// <summary>
+    /// Test endpoint to verify JWT authentication.
+    /// </summary>
+    [HttpGet("test-auth")]
+    [Authorize]
+    public IActionResult TestAuth()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var username = User.FindFirstValue(ClaimTypes.Name);
+        var role = User.FindFirstValue(ClaimTypes.Role);
+
+        return Ok(new
+        {
+            message = "JWT authentication is working!, welcome to the matrix.",
+            userId,
+            username,
+            role,
+            claims = User.Claims.Select(c => new { c.Type, c.Value })
+        });
     }
 
     // DTOs for login/register
