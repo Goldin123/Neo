@@ -40,7 +40,7 @@ public class PostsController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new post.
+    /// Creates a new post by the current user.
     /// </summary>
     [HttpPost]
     [Authorize]
@@ -57,7 +57,7 @@ public class PostsController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    /// Likes a post.
+    /// Likes a post by the current user.
     /// </summary>
     [HttpPost("{id}/like")]
     [Authorize]
