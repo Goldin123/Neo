@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Neo.Application.UseCases.AddComment;
+using Neo.Application.UseCases.FlagPost;
 using Neo.Application.UseCases.GetCommentsByPost;
+using Neo.Domain.Entities;
 using System.Security.Claims;
 
 namespace Neo.Api.Controllers;
@@ -26,17 +28,23 @@ public class CommentsController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    /// Adds a comment to a post.
+    /// Adds a comment to a post by the current user.
     /// </summary>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Add([FromBody] AddCommentCommand command)
+    public async Task<IActionResult> Add([FromBody] AddCommentDto dto)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
         if (userId == 0) return Unauthorized();
 
-        var newCommand = command with { UserId = userId };
+
+        if (string.IsNullOrWhiteSpace(dto.Content))
+            return BadRequest("Comment content is required.");
+
+        var newCommand = new AddCommentCommand(dto.PostId, userId, dto.Content);
         var commentId = await mediator.Send(newCommand);
         return Ok(new { commentId });
     }
+
+    public record AddCommentDto(int PostId, string Content);
 }
