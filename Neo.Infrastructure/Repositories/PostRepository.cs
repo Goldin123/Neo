@@ -61,7 +61,7 @@ public sealed class PostRepository(DbContext dbContext, ILogger<PostRepository> 
     }
 
     /// <inheritdoc />
-    public async Task<int> CreateAsync(Post post, IEnumerable<string>? tags = null)
+    public async Task<int> CreateAsync(Post post)
     {
         var now = DateTime.UtcNow;
         try
@@ -77,15 +77,6 @@ public sealed class PostRepository(DbContext dbContext, ILogger<PostRepository> 
             await conn.ExecuteAsync("spPost_Create", parameters, commandType: CommandType.StoredProcedure);
             var postId = parameters.Get<int>("@NewId");
 
-            if (tags is not null)
-            {
-                foreach (var tag in tags.Distinct())
-                {
-                    await conn.ExecuteAsync("spPost_AddTag",
-                        new { PostId = postId, TagName = tag },
-                        commandType: CommandType.StoredProcedure);
-                }
-            }
             logger.LogInformation("Post created with Id {PostId} by user {UserId} at {Timestamp:O}", postId, post.UserId, now);
             return postId;
         }

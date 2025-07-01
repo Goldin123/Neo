@@ -40,9 +40,8 @@ public interface IPostRepository
     /// Creates a new post with optional tags.
     /// </summary>
     /// <param name="post">The post to create.</param>
-    /// <param name="tags">Optional: The tags to assign to the post.</param>
     /// <returns>The unique identifier of the newly created post.</returns>
-    Task<int> CreateAsync(Post post, IEnumerable<string>? tags = null);
+    Task<int> CreateAsync(Post post);
 
     /// <summary>
     /// Adds a tag to a post.

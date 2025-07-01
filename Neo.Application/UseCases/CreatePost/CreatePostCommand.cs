@@ -8,6 +8,5 @@ using MediatR;
 public record CreatePostCommand(
     int UserId,
     string Title,
-    string Content,
-    IEnumerable<string>? Tags = null
+    string Content
 ) : IRequest<int>;

@@ -42,14 +42,15 @@ public class PostsController(IMediator mediator) : ControllerBase
     /// </summary>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Create([FromBody] CreatePostCommand command)
+    public async Task<IActionResult> Create([FromBody] CreatePostDto dto)
     {
-        // get userId from JWT claims
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
-        if (userId == 0) return Unauthorized();
+        if (userId == 0)
+            return Unauthorized();
 
-        var newCommand = command with { UserId = userId };
-        var postId = await mediator.Send(newCommand);
+        var command = new CreatePostCommand(userId, dto.Title, dto.Content);
+        var postId = await mediator.Send(command);
+
         return CreatedAtAction(nameof(GetPaged), new { id = postId }, new { postId });
     }
 
@@ -84,4 +85,6 @@ public class PostsController(IMediator mediator) : ControllerBase
             return BadRequest("Failed to flag post.");
         return Ok();
     }
+
+    public record CreatePostDto(string Title,string Content);
 }
