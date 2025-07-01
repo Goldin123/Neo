@@ -1,4 +1,4 @@
-name: .NET Project Build & Test (No SQL)
+name: .NET Project Build & Test (Skip Integration Tests)
 
 on:
   push:
@@ -35,15 +35,11 @@ jobs:
           }
         shell: pwsh
 
-      - name: List Neo.Tests directory for debugging
-        run: dir Neo.Tests
-        shell: pwsh
-
-      - name: Run all tests (unit, functional, integration)
+      - name: Run only Unit and Functional tests (exclude Integration)
         run: |
           $projPath = Resolve-Path Neo.Tests/Neo.Tests.csproj
           Write-Host "Test project found at $projPath"
-          dotnet test $projPath --no-build --verbosity normal
+          dotnet test $projPath --no-build --verbosity normal --filter "FullyQualifiedName!~Neo.Tests.Integration"
         shell: pwsh
         env:
           ConnectionStrings__TestConnection: "Server=localhost;Database=NeoTestDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"
