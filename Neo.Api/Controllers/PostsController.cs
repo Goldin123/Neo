@@ -75,19 +75,48 @@ public class PostsController(IMediator mediator) : ControllerBase
 
     /// <summary>
     /// Flags a post as misleading or false information (moderators only).
+    /// Adds a regulatory tag to the post.
     /// </summary>
-    [HttpPost("{id}/flag")]
+    [HttpPost("{PostId}/flag")]
     [Authorize(Roles = "Moderator")]
-    public async Task<IActionResult> Flag(int id, [FromBody] FlagPostCommand cmd)
+    public async Task<IActionResult> Flag(int PostId, [FromBody] FlagPostDto dto)
     {
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
         if (userId == 0) return Unauthorized();
 
-        var flagResult = await mediator.Send(cmd with { PostId = id, ModeratorId = userId });
+        if (string.IsNullOrWhiteSpace(dto.reason))
+            return BadRequest("Flag reason is required.");
+
+        var cmd = new FlagPostCommand(PostId, dto.reason, userId);
+
+        var flagResult = await mediator.Send(cmd);
         if (!flagResult)
             return BadRequest("Failed to flag post.");
+
+        // --- Map reason to tag name ---
+        var tagName = MapReasonToTag(dto.reason);
+
+        // Only add a tag if the mapping found one
+        if (!string.IsNullOrWhiteSpace(tagName))
+            await mediator.Send(new TagPostCommand(PostId, tagName));
+
         return Ok();
     }
 
-    public record CreatePostDto(string Title,string Content);
+    // Maps moderator reason to regulatory tag
+    private static string? MapReasonToTag(string reason)
+    {
+        reason = reason.ToLowerInvariant();
+
+        if (reason.Contains("misleading"))
+            return "misleading";
+        if (reason.Contains("false"))
+            return "false_information";
+        // Add more mappings as needed
+        return null;
+    }
+
+    public record CreatePostDto(string Title, string Content);
+    public record FlagPostDto(string reason);
+    public record TagPostCommand(int PostId, string TagName);
 }

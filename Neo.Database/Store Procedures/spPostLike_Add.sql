@@ -6,21 +6,6 @@
         DECLARE @Id INT;
         EXEC spPostLike_Add 1, 2, @Id OUTPUT;
 */
-USE [Neo]
-GO
-/****** Object:  StoredProcedure [dbo].[spPostLike_Add]    Script Date: 2025/07/01 14:12:00 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-/*
-    Author: Goldin Baloyi
-    Name: spPostLike_Add
-    Description: Adds a like to a post by a user.
-    Usage:
-        DECLARE @Id INT;
-        EXEC spPostLike_Add 1, 2, @Id OUTPUT;
-*/
 Create PROCEDURE [dbo].[spPostLike_Add]
     @PostId INT,
     @UserId INT,
