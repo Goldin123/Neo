@@ -23,7 +23,7 @@ public sealed class CreatePostHandler(
             Content = request.Content,
             CreatedAt = DateTime.UtcNow
         };
-        var postId = await postRepo.CreateAsync(post, request.Tags);
+        var postId = await postRepo.CreateAsync(post);
         logger.LogInformation("Post {PostId} created successfully at {Timestamp:O}", postId, DateTime.UtcNow);
         return postId;
     }
