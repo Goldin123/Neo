@@ -66,7 +66,10 @@ public class PostsController(IMediator mediator) : ControllerBase
 
         var likeId = await mediator.Send(new LikePostCommand(id, userId));
         if (likeId == -1)
-            return BadRequest("You cannot like your own post or like a post more than once.");
+            return BadRequest("You cannot like a post more than once.");
+
+        if (likeId == -2)
+            return BadRequest("You cannot like your own post.");
         return Ok(new { likeId });
     }
 

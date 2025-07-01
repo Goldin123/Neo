@@ -6,6 +6,7 @@ using Neo.Api.Controllers;
 using Neo.Application.Common;
 using Neo.Application.UseCases.CreatePost;
 using Neo.Application.UseCases.GetPagedPosts;
+using Neo.Application.UseCases.LikePost;
 using Neo.Domain.Entities;
 using System.Security.Claims;
 using Xunit;
@@ -132,5 +133,53 @@ public class PostsControllerTests
         Assert.Empty(actual.Items);
     }
 
-    // Optionally add more tests to check paging params, filtering, etc.
+    [Fact]
+    public async Task Like_Returns_Ok_With_LikeId_When_Successful()
+    {
+        // Arrange
+        var mediatorMock = new Mock<IMediator>();
+        mediatorMock.Setup(m => m.Send(It.IsAny<LikePostCommand>(), default)).ReturnsAsync(42);
+
+        var controller = new PostsController(mediatorMock.Object);
+
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+        new Claim(ClaimTypes.NameIdentifier, "10") }, "mock"));
+
+        controller.ControllerContext = new ControllerContext()
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
+
+        // Act
+        var result = await controller.Like(25);
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var value = ok.Value!;
+        var likeIdProp = value.GetType().GetProperty("likeId");
+        Assert.NotNull(likeIdProp);
+        var likeId = likeIdProp.GetValue(value);
+        Assert.Equal(42, likeId);
+    }
+
+
+    [Fact]
+    public async Task Like_Returns_Unauthorized_If_User_Not_Authenticated()
+    {
+        // Arrange
+        var mediatorMock = new Mock<IMediator>();
+        var controller = new PostsController(mediatorMock.Object);
+
+        controller.ControllerContext = new ControllerContext()
+        {
+            HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal() }
+        };
+
+        // Act
+        var result = await controller.Like(25);
+
+        // Assert
+        Assert.IsType<UnauthorizedResult>(result);
+    }
 }

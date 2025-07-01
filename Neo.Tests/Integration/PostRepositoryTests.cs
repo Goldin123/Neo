@@ -88,18 +88,5 @@ public class PostRepositoryTests : IClassFixture<DbFixture>
         Assert.Contains(postsToInsert[1].Title, titles);
     }
 
-    // Optional: Add Tag and Flag Post if you implement/test these methods
-    /*
-    [Fact]
-    public async Task AddTagAsync_Should_Add_Tag_To_Post()
-    {
-        // Similar pattern: create user, create post, add tag, assert true/verify with SQL query if you want
-    }
 
-    [Fact]
-    public async Task FlagPostAsync_Should_Flag_Post()
-    {
-        // Similar: create user/moderator, create post, flag post, verify if no exception is thrown or check DB for flag status
-    }
-    */
 }
