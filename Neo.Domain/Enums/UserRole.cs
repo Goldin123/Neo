@@ -6,6 +6,10 @@
 public enum UserRole
 {
     /// <summary>
+    /// Represents an undefined or unknown user role.
+    /// </summary>
+    None = -1,
+    /// <summary>
     /// Represents a regular user.
     /// </summary>
     User = 0,
@@ -13,5 +17,6 @@ public enum UserRole
     /// <summary>
     /// Represents a moderator.
     /// </summary>
-    Moderator = 1
+    Moderator = 1,
+
 }
