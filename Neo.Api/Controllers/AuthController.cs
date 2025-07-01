@@ -1,9 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Neo.Domain.Entities;
+using Neo.Application.UseCases.RegisterUser;
 using Neo.Domain.Interfaces;
-using Neo.Infrastructure.Auth;
 
 namespace Neo.Api.Controllers;
 
@@ -13,7 +12,9 @@ namespace Neo.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController(
+    IMediator mediator,
     IUserRepository userRepo,
+    IPasswordHasher passwordHasher,
     IJwtTokenService jwtTokenService
 ) : ControllerBase
 {
@@ -24,21 +25,21 @@ public class AuthController(
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
-        var hash = PasswordHasher.HashPassword(dto.Password);
+        // Optionally validate role format here, if it's an enum:
+        // (otherwise let validation handle it in the Application layer)
+        if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password) || string.IsNullOrWhiteSpace(dto.Role))
+            return BadRequest("Username, password, and role are required.");
 
         // Convert string to UserRole enum (case-insensitive)
         if (!Enum.TryParse<Neo.Domain.Enums.UserRole>(dto.Role, true, out var userRole))
             return BadRequest("Invalid role.");
+        // If you want, you can add a validator for RegisterUserCommand to ensure valid role.
 
-        var user = new User
-        {
-            Username = dto.Username,
-            PasswordHash = hash,
-            Role = userRole
-        };
-
-        var id = await userRepo.CreateAsync(user);
-        return Ok(new { id });
+        // Send command to application layer via MediatR
+        var result = await mediator.Send(new RegisterUserCommand(dto.Username, dto.Password, userRole));
+        if (!result.Success)
+            return Conflict(new { error = result.ErrorMessage });
+        return Ok(new { id = result.UserId });
     }
 
     /// <summary>
@@ -49,7 +50,7 @@ public class AuthController(
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var user = await userRepo.GetByUsernameAsync(dto.Username);
-        if (user == null || !PasswordHasher.VerifyPassword(dto.Password, user.PasswordHash))
+        if (user == null || !passwordHasher.VerifyPassword(dto.Password, user.PasswordHash))
             return Unauthorized("Invalid credentials.");
 
         var token = jwtTokenService.GenerateToken(user);

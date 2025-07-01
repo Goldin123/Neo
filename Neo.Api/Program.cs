@@ -78,6 +78,7 @@ namespace Neo.Api
             builder.Services.AddScoped<ICommentRepository, CommentRepository>();
             builder.Services.AddScoped<ITagRepository, TagRepository>();
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
             // ---------- JWT Auth ----------
             var jwtSection = builder.Configuration.GetSection("JwtSettings");

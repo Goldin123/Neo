@@ -1,31 +1,58 @@
-﻿namespace Neo.Infrastructure.Auth;
-
+﻿using System;
 using System.Security.Cryptography;
 using System.Text;
+using Neo.Domain.Interfaces;
+
+namespace Neo.Infrastructure.Auth;
 
 /// <summary>
-/// Provides utilities for hashing and verifying user passwords.
+/// Provides password hashing and verification using PBKDF2.
 /// </summary>
-public static class PasswordHasher
+public sealed class PasswordHasher : IPasswordHasher
 {
-    /// <summary>
-    /// Hashes the provided plain-text password using SHA-256.
-    /// </summary>
-    /// <param name="password">The plain-text password to hash.</param>
-    /// <returns>A base64-encoded hash string.</returns>
-    public static string HashPassword(string password)
+    // These parameters can be tuned for security/performance
+    private const int SaltSize = 16;     // 128 bit
+    private const int KeySize = 32;      // 256 bit
+    private const int Iterations = 100_000;
+    private static readonly HashAlgorithmName HashAlgorithm = HashAlgorithmName.SHA256;
+
+    /// <inheritdoc/>
+    public string HashPassword(string password)
     {
-        using var sha256 = SHA256.Create();
-        var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-        return Convert.ToBase64String(bytes);
+        // Generate a random salt
+        byte[] salt = RandomNumberGenerator.GetBytes(SaltSize);
+
+        // Derive a key
+        var hash = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(password),
+            salt,
+            Iterations,
+            HashAlgorithm,
+            KeySize);
+
+        // Format: {iterations}.{base64 salt}.{base64 hash}
+        return $"{Iterations}.{Convert.ToBase64String(salt)}.{Convert.ToBase64String(hash)}";
     }
 
-    /// <summary>
-    /// Verifies a password against a previously computed hash.
-    /// </summary>
-    /// <param name="password">The plain-text password to verify.</param>
-    /// <param name="hash">The stored password hash.</param>
-    /// <returns><c>true</c> if the password matches the hash; otherwise, <c>false</c>.</returns>
-    public static bool VerifyPassword(string password, string hash)
-        => HashPassword(password) == hash;
+    /// <inheritdoc/>
+    public bool VerifyPassword(string password, string passwordHash)
+    {
+        var parts = passwordHash.Split('.', 3);
+        if (parts.Length != 3) return false;
+
+        if (!int.TryParse(parts[0], out var iterations)) return false;
+        var salt = Convert.FromBase64String(parts[1]);
+        var hash = Convert.FromBase64String(parts[2]);
+
+        // Derive a key from the input password
+        var hashToCompare = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(password),
+            salt,
+            iterations,
+            HashAlgorithm,
+            hash.Length);
+
+        // Constant-time comparison to prevent timing attacks
+        return CryptographicOperations.FixedTimeEquals(hash, hashToCompare);
+    }
 }
