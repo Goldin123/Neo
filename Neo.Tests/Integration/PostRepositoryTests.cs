@@ -88,5 +88,41 @@ public class PostRepositoryTests : IClassFixture<DbFixture>
         Assert.Contains(postsToInsert[1].Title, titles);
     }
 
+    [Fact]
+    public async Task FlagPostAsync_Should_Set_IsFlagged_And_Reason()
+    {
+        // Arrange: create user and post
+        var userRepo = new UserRepository(_fixture.DbContext, NullLogger<UserRepository>.Instance);
+        var user = new Neo.Domain.Entities.User
+        {
+            Username = $"moderator_{Guid.NewGuid():N}",
+            PasswordHash = "pw",
+            Role = Neo.Domain.Enums.UserRole.Moderator
+        };
+        var moderatorId = await userRepo.CreateAsync(user);
+
+        var post = new Post
+        {
+            UserId = moderatorId, // Could be a different user's post in a real case
+            Title = $"Flagged Post {Guid.NewGuid()}",
+            Content = "Flag this content",
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var postId = await _repository.CreateAsync(post);
+
+        // Act: flag the post
+        var reason = "misleading";
+        var flagResult = await _repository.FlagPostAsync(postId, reason, moderatorId);
+
+        // Assert: flag operation succeeded
+        Assert.True(flagResult);
+
+        // Fetch and assert flagged status
+        var fetched = await _repository.GetByIdAsync(postId);
+        Assert.NotNull(fetched);
+        Assert.True(fetched!.IsFlagged);
+        Assert.Equal(reason, fetched.FlagReason);
+    }
 
 }

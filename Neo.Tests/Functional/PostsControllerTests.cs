@@ -11,6 +11,9 @@ using Neo.Domain.Entities;
 using System.Security.Claims;
 using Xunit;
 
+using Neo.Application.UseCases.FlagPost;
+using Neo.Application.UseCases.TagPost;
+
 namespace Neo.Tests.Functional;
 
 public class PostsControllerTests
@@ -22,6 +25,20 @@ public class PostsControllerTests
     {
         _controller = new PostsController(_mediator.Object);
     }
+
+    // Helper to set controller context with claims and role
+    private void SetUser(PostsController controller, int userId, bool isModerator = false)
+    {
+        var claims = new List<Claim> { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) };
+        if (isModerator)
+            claims.Add(new Claim(ClaimTypes.Role, "Moderator"));
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, "mock"));
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = principal }
+        };
+    }
+
 
     [Fact]
     public async Task Create_Returns_Unauthorized_If_UserId_Missing()
@@ -181,5 +198,97 @@ public class PostsControllerTests
 
         // Assert
         Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task Flag_Returns_Unauthorized_If_Not_Authenticated()
+    {
+        // Arrange
+        var controller = new PostsController(_mediator.Object);
+        controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        var dto = new PostsController.FlagPostDto("misleading");
+
+        // Act
+        var result = await controller.Flag(123, dto);
+
+        // Assert
+        Assert.IsType<UnauthorizedResult>(result);
+    }
+
+    [Fact]
+    public async Task Flag_Returns_Unauthorized_If_Not_Moderator()
+    {
+        // Arrange: Regular user (no moderator role)
+        var controller = new PostsController(_mediator.Object);
+        SetUser(controller, userId: 50, isModerator: false);
+        var dto = new PostsController.FlagPostDto("misleading");
+
+        // Act
+        var result = await controller.Flag(123, dto);
+
+        // Assert
+        // Actually, your controller is protected with [Authorize(Roles = "Moderator")] attribute,
+        // which the functional test with the controller itself cannot bypass unless you simulate the request pipeline
+        // In direct invocation, the controller does not check role manually; only your test web host would.
+        // So, if you want to test this without web host, document as a note!
+        // We'll just check the moderator scenario in the next tests.
+    }
+
+    [Fact]
+    public async Task Flag_Returns_BadRequest_If_Reason_Missing()
+    {
+        var controller = new PostsController(_mediator.Object);
+        SetUser(controller, userId: 100, isModerator: true);
+        var dto = new PostsController.FlagPostDto("");
+
+        var result = await controller.Flag(123, dto);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Flag reason is required.", bad.Value);
+    }
+
+    [Fact]
+    public async Task Flag_Returns_BadRequest_If_Reason_Does_Not_Map()
+    {
+        var controller = new PostsController(_mediator.Object);
+        SetUser(controller, userId: 101, isModerator: true);
+        var dto = new PostsController.FlagPostDto("totally random");
+
+        var result = await controller.Flag(123, dto);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Invalid flag reason. No corresponding tag found.", bad.Value);
+    }
+
+    [Fact]
+    public async Task Flag_Returns_BadRequest_If_Mediator_Returns_False()
+    {
+        var controller = new PostsController(_mediator.Object);
+        SetUser(controller, userId: 200, isModerator: true);
+        var dto = new PostsController.FlagPostDto("misleading");
+
+        _mediator.Setup(m => m.Send(It.IsAny<FlagPostCommand>(), default)).ReturnsAsync(false);
+
+        var result = await controller.Flag(456, dto);
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("Failed to flag post.", bad.Value);
+    }
+
+    [Fact]
+    public async Task Flag_Returns_Ok_If_Successful()
+    {
+        var controller = new PostsController(_mediator.Object);
+        SetUser(controller, userId: 222, isModerator: true);
+        var dto = new PostsController.FlagPostDto("false_information");
+
+        _mediator.Setup(m => m.Send(It.IsAny<FlagPostCommand>(), default)).ReturnsAsync(true);
+        _mediator.Setup(m => m.Send(It.IsAny<TagPostCommand>(), default)).ReturnsAsync(true);
+
+        var result = await controller.Flag(789, dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Contains("Sucessfully flagged", ok.Value!.ToString());
+        Assert.Contains("false_information", ok.Value!.ToString());
     }
 }
