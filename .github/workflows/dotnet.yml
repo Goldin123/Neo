@@ -1,4 +1,4 @@
-name: .NET Project Build & Test (With SQL Server for Integration Tests)
+name: .NET Project Build & Test (No SQL)
 
 on:
   push:
@@ -9,58 +9,41 @@ on:
       - development
 
 jobs:
-  build:
+  build-and-test:
     runs-on: windows-latest
 
-    services:
-      sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          SA_PASSWORD: "YourStrong!Passw0rd"
-          ACCEPT_EULA: "Y"
-        ports:
-          - 1433:1433
-        options: >-
-          --health-cmd "exit 0"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
 
-    - name: Restore dependencies for all .csproj files
-      run: |
-        Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
-          dotnet restore $_.FullName
-        }
-      shell: pwsh
+      - name: Restore dependencies for all .csproj files
+        run: |
+          Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+            dotnet restore $_.FullName
+          }
+        shell: pwsh
 
-    - name: Build all .csproj projects (skip .sqlproj)
-      run: |
-        Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
-          dotnet build $_.FullName --no-restore
-        }
-      shell: pwsh
+      - name: Build all .csproj projects (excluding .sqlproj)
+        run: |
+          Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+            dotnet build $_.FullName --no-restore
+          }
+        shell: pwsh
 
-    - name: List Neo.Tests directory for debugging
-      run: dir Neo.Tests
-      shell: pwsh
+      - name: List Neo.Tests directory for debugging
+        run: dir Neo.Tests
+        shell: pwsh
 
-    - name: Wait for SQL Server to be ready
-      run: Start-Sleep -Seconds 20
-      shell: pwsh
-
-    - name: Run tests (unit, functional, integration)
-      run: |
-        $projPath = Resolve-Path Neo.Tests/Neo.Tests.csproj
-        Write-Host "Test project found at $projPath"
-        dotnet test $projPath --no-build --verbosity normal
-      shell: pwsh
-      env:
-        ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=NeoTestDb;User=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"
+      - name: Run all tests (unit, functional, integration)
+        run: |
+          $projPath = Resolve-Path Neo.Tests/Neo.Tests.csproj
+          Write-Host "Test project found at $projPath"
+          dotnet test $projPath --no-build --verbosity normal
+        shell: pwsh
+        env:
+          ConnectionStrings__TestConnection: "Server=localhost;Database=NeoTestDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"
