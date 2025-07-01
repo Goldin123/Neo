@@ -5,6 +5,8 @@ using Neo.Domain.Entities;
 using Neo.Domain.Enums;
 using Neo.Domain.Interfaces;
 
+namespace Neo.Tests.Unit;
+
 public class RegisterUserHandlerTests
 {
     private readonly Mock<IUserRepository> userRepo = new();
