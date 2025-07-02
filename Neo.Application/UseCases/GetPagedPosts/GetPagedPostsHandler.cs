@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Neo.Application.DTOs;
 using Neo.Application.UseCases.GetPagedPosts;
 using Neo.Domain.Interfaces;
-
+namespace Neo.Application.UseCases.GetPagedPosts;
 public sealed class GetPagedPostsHandler(
     IPostRepository postRepo,
     ICommentRepository commentRepo,
@@ -49,9 +49,9 @@ public sealed class GetPagedPostsHandler(
             var commentDtos = comments.Select(c =>
                 new PostCommentDto
                 {
-                    CommentUserName = userDict.ContainsKey(c.UserId) ? userDict[c.UserId].Username : c.UserId.ToString(),
+                    CommentUserName = userDict.TryGetValue(c.UserId, out var user) ? user.Username : c.UserId.ToString(),
                     CommentContent = c.Content,
-                    DateCreated = c.CreatedAt
+                    DateCreated = c.CreatedAt,
                 }
             ).ToList();
 
@@ -59,7 +59,7 @@ public sealed class GetPagedPostsHandler(
             var likeDtos = likes.Select(l =>
                 new PostLikeDto
                 {
-                    LikedUserName = userDict.ContainsKey(l.UserId) ? userDict[l.UserId].Username : l.UserId.ToString(),
+                    LikedUserName = userDict.TryGetValue(l.UserId, out var user) ? user.Username : l.UserId.ToString(),
                     LikedDate = l.CreatedAt
                 }
             ).ToList();

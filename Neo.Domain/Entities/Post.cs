@@ -45,6 +45,6 @@ public class Post
     /// <summary>
     /// Gets or sets the tags associated with the post.
     /// </summary>
-    public string TagName { get; set; } 
+    public string? TagName { get; set; } 
 
 }

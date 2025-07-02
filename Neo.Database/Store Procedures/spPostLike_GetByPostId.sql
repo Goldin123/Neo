@@ -12,7 +12,7 @@ BEGIN
         pl.Id,
         pl.PostId,
         pl.UserId,
-        u.UserName,         -- Join to get user name
+        u.Username,         -- Join to get user name
         pl.CreatedAt
     FROM PostLikes pl
     INNER JOIN Users u ON pl.UserId = u.Id
