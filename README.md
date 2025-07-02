@@ -725,8 +725,8 @@ GO
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/neo-forum-backend.git
-   cd neo-forum-backend
+   git clone https://github.com/Goldin123/Neo.git
+   cd Neo
 
 2. **Configure connection strings:**  
    Open `appsettings.Development.json` (and/or `appsettings.json`) in the root or API project directory.  
@@ -771,6 +771,7 @@ dotnet test
 ```
 ## Key Business Rules
 
+- **Users must be registered first** before posting any post via the Auth endpoints and login for a token.
 - **Posts cannot be edited or deleted** once created (enforced at both API and database level).
 - **Users can like a post only once**, and cannot like their own post.
 - **Anonymous users** may view posts, but **must log in to create posts, comments, or like posts**.
@@ -782,7 +783,7 @@ dotnet test
 
 ## API Documentation & Postman Collection
 
-- A full **Postman collection** is included in the repository at `/docs/NeoForum.postman_collection.json` with preconfigured requests for:
+- A full **Postman collection** is included in the repository at `[solution root]/NeoForum.postman_collection.json` with preconfigured requests for:
   - User registration and login (JWT-based)
   - Creating posts and comments
   - Liking and unliking posts
