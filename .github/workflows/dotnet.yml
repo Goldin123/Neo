@@ -1,0 +1,45 @@
+name: .NET Project Build & Test (Skip Integration Tests)
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - development
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies for all .csproj files
+        run: |
+          Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+            dotnet restore $_.FullName
+          }
+        shell: pwsh
+
+      - name: Build all .csproj projects (excluding .sqlproj)
+        run: |
+          Get-ChildItem -Recurse -Filter *.csproj | ForEach-Object {
+            dotnet build $_.FullName --no-restore
+          }
+        shell: pwsh
+
+      - name: Run only Unit and Functional tests (exclude Integration)
+        run: |
+          $projPath = Resolve-Path Neo.Tests/Neo.Tests.csproj
+          Write-Host "Test project found at $projPath"
+          dotnet test $projPath --no-build --verbosity normal --filter "FullyQualifiedName!~Neo.Tests.Integration"
+        shell: pwsh
+        env:
+          ConnectionStrings__TestConnection: "Server=localhost;Database=NeoTestDb;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True"

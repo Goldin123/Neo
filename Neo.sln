@@ -1,11 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36221.1 d17.14
+VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Api", "Neo.Api\Neo.Api.csproj", "{20BA3049-28BE-4A2F-A178-E63CCA4A6CDC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Domain", "Neo.Domain\Neo.Domain.csproj", "{127D9051-F89F-4AC6-97C7-3737B45D9570}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Application", "Neo.Application\Neo.Application.csproj", "{476EE949-57CE-42EF-BF91-5C4B8C0C6D1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Infrastructure", "Neo.Infrastructure\Neo.Infrastructure.csproj", "{630526E7-1BBC-4D4F-87BB-B82E29ABC805}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neo.Tests", "Neo.Tests\Neo.Tests.csproj", "{4404E6AE-0E6B-47EC-99AC-F9E952080C23}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Neo.Database", "Neo.Database\Neo.Database.sqlproj", "{7003E183-5D5C-4A07-A363-BB1954478D00}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documentation", "Documentation", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		NeoForum.postman_collection.json = NeoForum.postman_collection.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +34,24 @@ Global
 		{127D9051-F89F-4AC6-97C7-3737B45D9570}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{127D9051-F89F-4AC6-97C7-3737B45D9570}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{127D9051-F89F-4AC6-97C7-3737B45D9570}.Release|Any CPU.Build.0 = Release|Any CPU
+		{476EE949-57CE-42EF-BF91-5C4B8C0C6D1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{476EE949-57CE-42EF-BF91-5C4B8C0C6D1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{476EE949-57CE-42EF-BF91-5C4B8C0C6D1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{476EE949-57CE-42EF-BF91-5C4B8C0C6D1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{630526E7-1BBC-4D4F-87BB-B82E29ABC805}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{630526E7-1BBC-4D4F-87BB-B82E29ABC805}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{630526E7-1BBC-4D4F-87BB-B82E29ABC805}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{630526E7-1BBC-4D4F-87BB-B82E29ABC805}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4404E6AE-0E6B-47EC-99AC-F9E952080C23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4404E6AE-0E6B-47EC-99AC-F9E952080C23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4404E6AE-0E6B-47EC-99AC-F9E952080C23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4404E6AE-0E6B-47EC-99AC-F9E952080C23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7003E183-5D5C-4A07-A363-BB1954478D00}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
