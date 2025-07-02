@@ -43,7 +43,7 @@ public class CommentsController(IMediator mediator) : ControllerBase
 
         var newCommand = new AddCommentCommand(dto.PostId, userId, dto.Content);
         var commentId = await mediator.Send(newCommand);
-        return Ok(new { commentId });
+        return Ok(new {message ="Successfuly crated a comment",commentId });
     }
 
     public record AddCommentDto(int PostId, string Content);

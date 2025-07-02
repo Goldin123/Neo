@@ -2,5 +2,5 @@
 
 public class PostTagDto
 {
-    public string TagName { get; set; }
+    public string? TagName { get; set; }
 }

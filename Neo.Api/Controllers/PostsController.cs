@@ -21,7 +21,7 @@ namespace Neo.Api.Controllers;
 public class PostsController(IMediator mediator) : ControllerBase
 {
     /// <summary>
-    /// Gets paged posts with filters.
+    /// Gets paged posts with filters, this does not require an auth token.
     /// </summary>
     [HttpGet]
     [AllowAnonymous]
@@ -40,7 +40,7 @@ public class PostsController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new post by the current user.
+    /// Creates a new post by the current user, you need to be authotised first to perfom this.
     /// </summary>
     [HttpPost]
     [Authorize]
@@ -53,11 +53,16 @@ public class PostsController(IMediator mediator) : ControllerBase
         var command = new CreatePostCommand(userId, dto.Title, dto.Content);
         var postId = await mediator.Send(command);
 
-        return CreatedAtAction(nameof(GetPaged), new { id = postId }, new { postId });
+        return CreatedAtAction(
+           nameof(Create),
+           new { id = postId },
+           new { postId, message = "Successfully created a post" }
+       );
+
     }
 
     /// <summary>
-    /// Likes a post by the current user.
+    /// Likes a post by the current user, this only allows one like per user, users cannot like theirs own posts.
     /// </summary>
     [HttpPost("{id}/like")]
     [Authorize]
@@ -68,15 +73,15 @@ public class PostsController(IMediator mediator) : ControllerBase
 
         var likeId = await mediator.Send(new LikePostCommand(id, userId));
         if (likeId == -1)
-            return BadRequest("You cannot like a post more than once.");
+            return BadRequest(new { message = "You cannot like a post more than once." });
 
         if (likeId == -2)
             return BadRequest("You cannot like your own post.");
-        return Ok(new { likeId });
+        return Ok(new { message = "Successfully liked post.", likeId });
     }
 
     /// <summary>
-    /// Removes a like from a post by the current user.
+    /// Removes a like from a post by the current user, if the .
     /// </summary>
     [HttpPost("{id}/unlike")]
     [Authorize]
@@ -88,9 +93,10 @@ public class PostsController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new UnlikePostCommand(id, userId));
         
         if (result == -1)
-            return BadRequest("You have not liked this post or already unliked it.");
+            return BadRequest(new { message = "You have not liked this post or already unliked it." });
+         
+        return Ok(new { message = "Successfully removed like on the post." });
 
-        return Ok();
     }
 
     /// <summary>
@@ -104,25 +110,25 @@ public class PostsController(IMediator mediator) : ControllerBase
         var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
         if (userId == 0) return Unauthorized();
 
-        if (string.IsNullOrWhiteSpace(dto.reason))
-            return BadRequest("Flag reason is required.");
+        if (string.IsNullOrWhiteSpace(dto.Reason))
+            return BadRequest(new { message = "Flag reason is required." });
 
         // --- Map reason to tag name ---
-        var tagName = MapReasonToTag(dto.reason);
+        var tagName = MapReasonToTag(dto.Reason);
         if (string.IsNullOrWhiteSpace(tagName))
-            return BadRequest("Invalid flag reason. No corresponding tag found.");
+            return BadRequest(new { message = "Invalid flag reason. No corresponding tag found." });
 
         var cmd = new FlagPostCommand(PostId, tagName, userId);
 
         var flagResult = await mediator.Send(cmd);
         if (!flagResult)
-            return BadRequest("Failed to flag post.");     
+            return BadRequest(new { message = "Failed to flag post." });     
 
         // Only add a tag if the mapping found one
         if (!string.IsNullOrWhiteSpace(tagName))
             await mediator.Send(new TagPostCommand(PostId, tagName));
 
-        return Ok($"Sucessfully flagged the post and created a {tagName} tag on it.");
+        return Ok(new { message = $"Sucessfully flagged the post and created a {tagName} tag on it." });
     }
 
     // Maps moderator reason to regulatory tag
@@ -139,5 +145,5 @@ public class PostsController(IMediator mediator) : ControllerBase
     }
 
     public record CreatePostDto(string Title, string Content);
-    public record FlagPostDto(string reason);
+    public record FlagPostDto(string Reason);
 }

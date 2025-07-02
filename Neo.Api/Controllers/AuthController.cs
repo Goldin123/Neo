@@ -35,12 +35,12 @@ public class AuthController(
         if (!Enum.TryParse<Neo.Domain.Enums.UserRole>(dto.Role, true, out var userRole) ||
             !Enum.IsDefined(typeof(Neo.Domain.Enums.UserRole), userRole) ||
             userRole == Neo.Domain.Enums.UserRole.None) // If you have a None/Unknown default
-            return BadRequest("Invalid role.");
+            return BadRequest(new { message = "Invalid role." });
 
         var result = await mediator.Send(new RegisterUserCommand(dto.Username, dto.Password, userRole));
         if (!result.Success)
             return Conflict(new { error = result.ErrorMessage });
-        return Ok(new { id = result.UserId });
+        return Ok(new { message = "Successfully registerd a user.", Id = result.UserId });
     }
 
 
@@ -53,7 +53,7 @@ public class AuthController(
     {
         var user = await userRepo.GetByUsernameAsync(dto.Username);
         if (user == null || !passwordHasher.VerifyPassword(dto.Password, user.PasswordHash))
-            return Unauthorized("Invalid credentials.");
+            return Unauthorized(new { message = "Invalid credentials." });
 
         var token = jwtTokenService.GenerateToken(user);
         return Ok(new { token, username = user.Username, role = user.Role, userId = user.Id });
