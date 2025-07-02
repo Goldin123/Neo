@@ -29,8 +29,6 @@ public class AuthControllerTests
         );
     }
 
-    private record RegisterSuccessResponse(int id);
-
     [Fact]
     public async Task Register_Returns_BadRequest_If_Fields_Are_Empty()
     {
@@ -50,7 +48,11 @@ public class AuthControllerTests
         var result = await _controller.Register(dto);
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.Equal("Invalid role.", badRequest.Value);
+
+        // Should match the anonymous object { message = "Invalid role." }
+        var msgProp = badRequest.Value!.GetType().GetProperty("message");
+        Assert.NotNull(msgProp);
+        Assert.Equal("Invalid role.", msgProp.GetValue(badRequest.Value));
     }
 
     [Fact]
@@ -67,9 +69,8 @@ public class AuthControllerTests
 
         // Use reflection to access anonymous `error` property
         var errorProp = conflict.Value!.GetType().GetProperty("error");
-        var errorValue = errorProp?.GetValue(conflict.Value)?.ToString();
-
-        Assert.Equal("Username already exists.", errorValue);
+        Assert.NotNull(errorProp);
+        Assert.Equal("Username already exists.", errorProp.GetValue(conflict.Value));
     }
 
     [Fact]
@@ -84,11 +85,14 @@ public class AuthControllerTests
 
         var ok = Assert.IsType<OkObjectResult>(result);
 
-        // Use reflection to get anonymous `id` value
-        var idProp = ok.Value!.GetType().GetProperty("id");
-        var idValue = idProp?.GetValue(ok.Value);
+        // Use reflection to get anonymous `message` and `Id` values
+        var messageProp = ok.Value!.GetType().GetProperty("message");
+        var idProp = ok.Value!.GetType().GetProperty("Id");
+        Assert.NotNull(messageProp);
+        Assert.NotNull(idProp);
 
-        Assert.Equal(101, idValue);
+        Assert.Equal("Successfully registerd a user.", messageProp.GetValue(ok.Value));
+        Assert.Equal(101, idProp.GetValue(ok.Value));
     }
 
     #region Login
@@ -128,7 +132,10 @@ public class AuthControllerTests
         var result = await _controller.Login(dto);
 
         var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
-        Assert.Equal("Invalid credentials.", unauthorized.Value);
+
+        var msgProp = unauthorized.Value!.GetType().GetProperty("message");
+        Assert.NotNull(msgProp);
+        Assert.Equal("Invalid credentials.", msgProp.GetValue(unauthorized.Value));
     }
 
     [Fact]
@@ -143,9 +150,11 @@ public class AuthControllerTests
         var result = await _controller.Login(dto);
 
         var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
-        Assert.Equal("Invalid credentials.", unauthorized.Value);
+
+        var msgProp = unauthorized.Value!.GetType().GetProperty("message");
+        Assert.NotNull(msgProp);
+        Assert.Equal("Invalid credentials.", msgProp.GetValue(unauthorized.Value));
     }
 
     #endregion
-
 }
